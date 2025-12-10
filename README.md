@@ -78,14 +78,35 @@ Visit `http://localhost:8080`
 ```
 cortex-vision/
 ├── src/
-│   ├── pages/                          # React pages
-│   ├── components/ui/                  # shadcn/ui components
-│   ├── backend/
-│   │   ├── backend_server.py           # FastAPI server
-│   │   ├── code_architecture_agent.py  # LangGraph agent
-│   │   └── .env.example                # API key template
-│   └── hooks/                          # React hooks
-├── public/                             # Static assets
+│   ├── pages/
+│   │   ├── Index.tsx                   # Main page orchestrating all components
+│   │   └── NotFound.tsx                # 404 error page
+│   ├── components/
+│   │   ├── AnalysisForm.tsx            # Repository URL/upload input form
+│   │   ├── LoadingScreen.tsx           # Loading animation with quotes
+│   │   ├── ResultsView.tsx             # Analysis results and diagram display
+│   │   ├── NavLink.tsx                 # Navigation link component
+│   │   └── UI/                         # shadcn/ui components (button, dialog, etc.)
+│   ├── hooks/
+│   │   ├── useGitHistory.ts            # Git branch/tag/commit fetching
+│   │   ├── useAnalysis.ts              # Code analysis operations & job polling
+│   │   ├── useMermaidRenderer.ts       # Mermaid diagram rendering
+│   │   ├── useCallFlow.ts              # Call flow visualization logic
+│   │   ├── useVersionCache.ts          # Version caching for branch switching
+│   │   └── use-toast.ts                # Toast notifications
+│   ├── lib/
+│   │   ├── api.ts                      # API endpoint constants
+│   │   ├── diagram-export.ts           # Diagram export (PNG/SVG/new tab)
+│   │   ├── call-flow-utils.ts          # Call flow highlighting utilities
+│   │   ├── mermaid-utils.ts            # Mermaid configuration & helpers
+│   │   └── utils.ts                    # General utility functions
+│   ├── types/
+│   │   └── analysis.ts                 # TypeScript type definitions
+│   └── backend/
+│       ├── backend_server.py           # FastAPI server with git-history endpoint
+│       ├── code_architecture_agent.py  # LangGraph multi-agent system
+│       └── .env.example                # API key template
+├── public/                             # Static assets & PWA icons
 ├── package.json
 ├── requirements.txt
 └── README.md
@@ -95,11 +116,12 @@ cortex-vision/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/analysis` | Start a new code analysis job |
+| `POST` | `/api/analyze` | Start a new code analysis job |
 | `GET` | `/api/jobs/{job_id}` | Get job status and progress |
 | `GET` | `/api/results/{job_id}` | Retrieve analysis results |
+| `GET` | `/api/results/{job_id}/callflow/{method_name}` | Get call flow from a specific method |
+| `GET` | `/api/git-history/{repo_path}` | Fetch branches, tags, and commits for a repository |
 | `POST` | `/api/upload` | Upload code archive (ZIP/TAR) |
-| `GET` | `/api/call-flow/{job_id}` | Get method call flow data |
 | `WS` | `/ws/jobs/{job_id}` | Real-time progress updates |
 
 ## 🏗️ Architecture
