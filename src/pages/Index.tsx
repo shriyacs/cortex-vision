@@ -1442,6 +1442,7 @@ const Index = () => {
     return (
       <ResultsView
         analyzedBranch={analyzedBranch}
+        analyzedBranchB={analyzedBranchB}
         compareMode={compareMode}
         availableVersions={availableVersions}
         versionCache={versionCache}

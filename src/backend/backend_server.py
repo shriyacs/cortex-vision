@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, File, UploadFile
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -37,7 +37,8 @@ import uvicorn
 import zipfile
 import tarfile
 
-# Import our agent
+# Import our agent and rate limiter
+from rate_limiter import RateLimiter
 from code_architecture_agent import create_architecture_agent
 
 # ============================================================================
@@ -50,10 +51,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +65,9 @@ app.add_middleware(
 # In-memory storage for jobs (use Redis in production)
 jobs_db: Dict[str, dict] = {}
 results_cache: Dict[str, dict] = {}
+
+# Rate limiter (10 analyses per 24 hours per IP)
+rate_limiter = RateLimiter(max_requests=10, window_hours=24)
 
 # WebSocket connections manager
 class ConnectionManager:
@@ -436,17 +442,21 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @app.post("/api/analyze", response_model=JobResponse)
-async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks):
+async def start_analysis(analysis_request: AnalysisRequest, request: Request, background_tasks: BackgroundTasks):
     """
     Start a new code architecture analysis.
 
     Returns a job_id that can be used to track progress and retrieve results.
+    Rate limited to 10 requests per 24 hours per IP address.
     """
+    # Check rate limit
+    await rate_limiter.check_rate_limit(request)
+
     # Create job
-    job_id = create_job(request)
+    job_id = create_job(analysis_request)
 
     # Start analysis in background
-    background_tasks.add_task(run_analysis_async, job_id, request)
+    background_tasks.add_task(run_analysis_async, job_id, analysis_request)
 
     return JobResponse(
         job_id=job_id,

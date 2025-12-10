@@ -3,7 +3,7 @@
  *
  * Automatically uses the correct API URL based on environment:
  * - Development: http://localhost:8000
- * - Production: Your Render backend URL (set in Vercel environment variables)
+ * - Production: Render backend URL (set in Vercel environment variables)
  */
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';

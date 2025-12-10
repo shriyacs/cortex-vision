@@ -12,6 +12,7 @@ import { AnalysisResults, GitVersions, GranularityLevel } from "@/types/analysis
 
 interface ResultsViewProps {
   analyzedBranch: string;
+  analyzedBranchB?: string;
   compareMode: boolean;
   availableVersions: GitVersions;
   versionCache: Map<string, AnalysisResults>;
@@ -38,6 +39,7 @@ interface ResultsViewProps {
 export const ResultsView = (props: ResultsViewProps) => {
   const {
     analyzedBranch,
+    analyzedBranchB,
     compareMode,
     availableVersions,
     versionCache,
@@ -394,7 +396,7 @@ export const ResultsView = (props: ResultsViewProps) => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleExport('png')}
+                    onClick={() => handleDownload('png')}
                     className="h-7 px-2 text-xs"
                     title="Download high-quality PNG (3x resolution)"
                   >
@@ -404,7 +406,7 @@ export const ResultsView = (props: ResultsViewProps) => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleExport('svg')}
+                    onClick={() => handleDownload('svg')}
                     className="h-7 px-2 text-xs"
                     title="Download vector SVG"
                   >
@@ -469,28 +471,7 @@ export const ResultsView = (props: ResultsViewProps) => {
 
           <div className="mt-6 flex justify-center">
             <button
-              onClick={() => {
-                setShowResults(false);
-                setMermaidCode("");
-                setMermaidCodeB("");
-                setUrl("");
-                setFile(null);
-                setGitRef("main");
-                setGitRefB("dev");
-                setAnalyzedBranch("");
-                setAnalyzedBranchB("");
-                setSelectedMethod("");
-                setCallFlowData(null);
-                setAvailableMethods([]);
-                setDiffStats(null);
-                setGranularityLevel(1);
-                setAnalysisResults(null);
-                setAnalysisResultsB(null);
-                setCurrentRepoPath("");
-                setAvailableVersions({ branches: [], tags: [], recentCommits: [] });
-                setVersionCache(new Map());
-                setIsLoadingVersion(false);
-              }}
+              onClick={handleNewAnalysis}
               className="text-xs tracking-widest text-muted-foreground hover:text-foreground transition-colors uppercase"
             >
               ← New Analysis
