@@ -2,9 +2,9 @@
  * Results view component displaying analysis results with diagrams
  */
 
-import { Button } from "@/components/UI/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/UI/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/UI/select";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Info, Copy, Download, Check, ExternalLink, GitBranch } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';

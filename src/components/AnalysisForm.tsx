@@ -3,9 +3,9 @@
  */
 
 import { useRef } from "react";
-import { Input } from "@/components/UI/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/UI/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/UI/tabs";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Info } from "lucide-react";
 
 interface AnalysisFormProps {
