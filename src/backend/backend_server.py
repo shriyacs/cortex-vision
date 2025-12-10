@@ -19,6 +19,8 @@ import json
 import uuid
 import shutil
 import tempfile
+import subprocess
+import re
 from datetime import datetime
 from typing import Optional, Dict, List
 from enum import Enum
@@ -669,20 +671,66 @@ async def get_git_history(repo: str):
         tags: List of tag names
         recent_commits: List of recent commits with hash, message, date
     """
-    try:
-        import subprocess
+    temp_dir = None
 
+    try:
         # Resolve repo path
         repo_path = repo
 
+        # If it's a URL, clone it to a temporary directory
+        if repo_path.startswith("http://") or repo_path.startswith("https://"):
+            # Normalize GitHub URLs (remove /tree/branch, /blob/branch, etc.)
+            repo_path = re.sub(r'/(tree|blob)/[^/]+.*$', '', repo_path)
+
+            # Add .git suffix if not present
+            if not repo_path.endswith('.git'):
+                repo_path = repo_path + '.git'
+
+            # Clone repository to temp directory (shallow clone, no checkout)
+            temp_dir = tempfile.mkdtemp(prefix="cortex_git_history_")
+
+            try:
+                # Use --bare for minimal clone (just git data, no working tree)
+                result = subprocess.run(
+                    ["git", "clone", "--bare", repo_path, temp_dir],
+                    capture_output=True,
+                    text=True,
+                    timeout=60  # 1 minute timeout for git history
+                )
+
+                if result.returncode != 0:
+                    raise Exception(f"Git clone failed: {result.stderr}")
+
+                # For bare repos, we don't use -C, just run commands in the repo directory
+                work_dir = temp_dir
+                use_c_flag = False
+            except subprocess.TimeoutExpired:
+                raise Exception("Repository clone timed out")
+        else:
+            # Local path
+            work_dir = repo_path
+            use_c_flag = True
+
         # Get branches
         try:
-            branches_output = subprocess.run(
-                ["git", "-C", repo_path, "branch", "-r"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            if use_c_flag:
+                # For normal repos
+                branches_output = subprocess.run(
+                    ["git", "-C", work_dir, "branch", "-r"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+            else:
+                # For bare repos, list remote branches
+                branches_output = subprocess.run(
+                    ["git", "branch", "-r"],
+                    cwd=work_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+
             branches = []
             for line in branches_output.stdout.split('\n'):
                 line = line.strip()
@@ -692,41 +740,64 @@ async def get_git_history(repo: str):
                     if branch:
                         branches.append(branch)
 
-            # Also get local branches
-            local_branches_output = subprocess.run(
-                ["git", "-C", repo_path, "branch"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            for line in local_branches_output.stdout.split('\n'):
-                line = line.strip().replace('* ', '')
-                if line and line not in branches:
-                    branches.append(line)
+            # Also get local branches (for non-bare repos)
+            if use_c_flag:
+                try:
+                    local_branches_output = subprocess.run(
+                        ["git", "-C", work_dir, "branch"],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    for line in local_branches_output.stdout.split('\n'):
+                        line = line.strip().replace('* ', '')
+                        if line and line not in branches:
+                            branches.append(line)
+                except subprocess.CalledProcessError:
+                    pass  # Ignore if local branches fail
 
-        except subprocess.CalledProcessError:
-            branches = ["main", "master", "dev", "develop"]
+        except subprocess.CalledProcessError as e:
+            print(f"Error fetching branches: {e.stderr}")
+            branches = ["main"]  # Default to main only
 
         # Get tags
         try:
-            tags_output = subprocess.run(
-                ["git", "-C", repo_path, "tag", "-l"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            if use_c_flag:
+                tags_output = subprocess.run(
+                    ["git", "-C", work_dir, "tag", "-l"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+            else:
+                tags_output = subprocess.run(
+                    ["git", "tag", "-l"],
+                    cwd=work_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
             tags = [tag.strip() for tag in tags_output.stdout.split('\n') if tag.strip()]
         except subprocess.CalledProcessError:
             tags = []
 
         # Get recent commits (last 10)
         try:
-            commits_output = subprocess.run(
-                ["git", "-C", repo_path, "log", "-10", "--pretty=format:%H|%s|%ai"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            if use_c_flag:
+                commits_output = subprocess.run(
+                    ["git", "-C", work_dir, "log", "-10", "--pretty=format:%H|%s|%ai"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+            else:
+                commits_output = subprocess.run(
+                    ["git", "log", "-10", "--pretty=format:%H|%s|%ai"],
+                    cwd=work_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
             recent_commits = []
             for line in commits_output.stdout.split('\n'):
                 if line.strip():
@@ -747,12 +818,20 @@ async def get_git_history(repo: str):
         }
 
     except Exception as e:
-        # Return fallback data
+        print(f"Error in git-history endpoint: {str(e)}")
+        # Return fallback data with only main
         return {
-            "branches": ["main", "master", "dev", "develop"],
+            "branches": ["main"],
             "tags": [],
             "recent_commits": []
         }
+    finally:
+        # Clean up temp directory if it was created
+        if temp_dir and os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception as e:
+                print(f"Failed to clean up temp directory {temp_dir}: {e}")
 
 
 @app.get("/api/patterns")

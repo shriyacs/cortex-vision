@@ -17,7 +17,7 @@
 
 ## 📖 Overview
 
-Cortex analyzes code structure (modules, classes, services, dependencies, call graphs), identifies architectural patterns, and produces interactive Mermaid diagrams. Developed as a capstone project for **LLMs and Programming** under Professor Thomas LaToza at George Mason University.
+Cortex analyzes code structure (modules, classes, services, dependencies, call graphs), identifies architectural patterns, and produces interactive Mermaid diagrams.
 
 ## ✨ Features
 
@@ -63,7 +63,7 @@ cd src/backend && python backend_server.py
 npm run dev
 ```
 
-Visit `http://localhost:5173`
+Visit `http://localhost:8080`
 
 ## 🛠️ Tech Stack
 
@@ -129,10 +129,6 @@ Contributions are welcome! Please fork the repo and submit a pull request.
 ## 👤 Author
 
 **Sri Shriya Challapuram**
-
-## 🙏 Acknowledgments
-
-This project was developed as a capstone for the **LLMs and Programming** course under Professor Thomas LaToza at George Mason University.
 
 **Powered by:** React • TypeScript • Vite • Tailwind • shadcn/ui • Mermaid • Anthropic Claude • FastAPI • LangGraph
 
