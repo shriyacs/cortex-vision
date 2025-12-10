@@ -28,6 +28,7 @@ import { QUIRKY_QUOTES } from "@/components/LoadingScreen";
 
 // Utilities
 import { openDiagramInNewTab } from "@/lib/diagram-export";
+import { API_URL } from "@/lib/api";
 import { highlightCallFlow as highlightCallFlowUtil } from "@/lib/call-flow-utils";
 
 // External Libraries
@@ -468,7 +469,7 @@ const Index = () => {
 
   const analyzeBranch = async (repoPath: string, branch: string) => {
     // Start analysis
-    const response = await fetch('http://localhost:8000/api/analyze', {
+    const response = await fetch(`${API_URL}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -525,12 +526,12 @@ const Index = () => {
     return new Promise((resolve, reject) => {
       const pollInterval = setInterval(async () => {
         try {
-          const statusResponse = await fetch(`http://localhost:8000/api/jobs/${jobId}`);
+          const statusResponse = await fetch(`${API_URL}/api/jobs/${jobId}`);
           const statusData = await statusResponse.json();
 
           if (statusData.status === 'completed') {
             clearInterval(pollInterval);
-            const resultsResponse = await fetch(`http://localhost:8000/api/results/${jobId}`);
+            const resultsResponse = await fetch(`${API_URL}/api/results/${jobId}`);
             const results = await resultsResponse.json();
             resolve({ jobId, results });
           } else if (statusData.status === 'failed') {
@@ -600,7 +601,7 @@ const Index = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const uploadResponse = await fetch('http://localhost:8000/api/upload', {
+        const uploadResponse = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           body: formData
         });
@@ -740,7 +741,7 @@ const Index = () => {
 
       toast({
         title: "Backend Error",
-        description: `${errorMessage}. Make sure backend is running on http://localhost:8000`,
+        description: `${errorMessage}. Make sure backend is running`,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -855,7 +856,7 @@ const Index = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/results/${currentJobId}/callflow/${encodeURIComponent(methodName)}?max_depth=5`
+        `${API_URL}/api/results/${currentJobId}/callflow/${encodeURIComponent(methodName)}?max_depth=5`
       );
 
       if (!response.ok) {
